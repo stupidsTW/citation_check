@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文獻引用匹配檢查器 V2.1</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .upload-section {
+            padding: 30px;
+            background: #f8f9fa;
+        }
+        
+        .file-input-group {
+            margin-bottom: 20px;
+        }
+        
+        .file-input-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .file-input-wrapper input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .file-input-wrapper input[type="file"]:hover {
+            border-color: #764ba2;
+            background: #f0f0ff;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .results {
+            padding: 30px;
+            display: none;
+        }
+        
+        .results.show {
+            display: block;
+        }
+        
+        .summary {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .summary h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 22px;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .summary-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .summary-item .number {
+            font-size: 32px;
+            font-weight: 700;
+            color: #667eea;
+            display: block;
+        }
+        
+        .summary-item .label {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+        }
+        
+        .section-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .entry {
+            background: #f8f9fa;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s;
+        }
+        
+        .entry:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateX(5px);
+        }
+        
+        .entry-header {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .entry-detail {
+            color: #666;
+            margin: 8px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .entry-detail strong {
+            color: #333;
+        }
+        
+        .evidence {
+            background: white;
+            padding: 10px 15px;
+            margin: 8px 0;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #555;
+            border-left: 3px solid #764ba2;
+        }
+        
+        .warning-entry {
+            border-left-color: #ff9800;
+        }
+        
+        .error-entry {
+            border-left-color: #f44336;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+            font-size: 18px;
+            display: none;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .download-btn {
+            background: #28a745;
+            margin-top: 20px;
+        }
+        
+        .download-btn:hover {
+            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 文獻引用匹配檢查器 V2.1</h1>
+            <p>上傳您的參考文獻與年份提取檔案，立即進行匹配分析</p>
+        </div>
+        
+        <div class="upload-section">
+            <div class="file-input-group">
+                <label for="bibFile">📖 參考文獻檔案 (Bibliography)</label>
+                <input type="file" id="bibFile" accept=".txt">
+            </div>
+            
+            <div class="file-input-group">
+                <label for="extractedFile">📄 年份提取結果檔案</label>
+                <input type="file" id="extractedFile" accept=".txt">
+            </div>
+            
+            <button class="btn" id="analyzeBtn" disabled>開始分析</button>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>正在分析中，請稍候...</p>
+        </div>
+        
+        <div class="results" id="results"></div>
+    </div>
+
+    <script>
+        let bibContent = null;
+        let extractedContent = null;
+        
+        document.getElementById('bibFile').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    bibContent = ev.target.result;
+                    checkReady();
+                };
+                reader.readAsText(file);
+            }
+        });
+        
+        document.getElementById('extractedFile').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    extractedContent = ev.target.result;
+                    checkReady();
+                };
+                reader.readAsText(file);
+            }
+        });
+        
+        function checkReady() {
+            document.getElementById('analyzeBtn').disabled = !(bibContent && extractedContent);
+        }
+        
+        document.getElementById('analyzeBtn').addEventListener('click', analyze);
+        
+        function extractBibEntries(content) {
+            const entries = [];
+            const lines = content.split('\n');
+            let currentEntry = "";
+            
+            for (const line of lines) {
+                const stripped = line.trim();
+                if (stripped && /[（(]\d{4}[）)]/.test(stripped)) {
+                    if (currentEntry) {
+                        processEntry(currentEntry, entries);
+                    }
+                    currentEntry = stripped;
+                } else if (currentEntry && stripped) {
+                    currentEntry += " " + stripped;
+                }
+            }
+            
+            if (currentEntry) {
+                processEntry(currentEntry, entries);
+            }
+            
+            return entries;
+        }
+        
+        function processEntry(entryLine, entries) {
+            const yearMatch = entryLine.match(/[（(](\d{4})[）)]/);
+            if (!yearMatch) return;
+            
+            const year = yearMatch[1];
+            const leftBracket = yearMatch[0][0];
+            const bracketPos = entryLine.indexOf(leftBracket + year);
+            if (bracketPos === -1) return;
+            
+            let preFullText = entryLine.substring(0, bracketPos).trim();
+            preFullText = preFullText.replace(/[.,;，。；、]\s*$/, '');
+            
+            const words = [];
+            const chineseWords = preFullText.match(/[\u4e00-\u9fff]+/g) || [];
+            const englishWords = preFullText.match(/\b[a-zA-Z]+\b/g) || [];
+            words.push(...chineseWords, ...englishWords);
+            
+            const keywords = new Set(words.filter(w => w.length >= 2).map(w => w.toLowerCase()));
+            
+            if (keywords.size === 0 && preFullText) {
+                const fallback = preFullText.replace(/[^\w\u4e00-\u9fff]/g, '').substring(0, 10).toLowerCase();
+                if (fallback) keywords.add(fallback);
+            }
+            
+            const displayPre = preFullText.length > 60 ? preFullText.substring(0, 60) + "..." : preFullText;
+            
+            entries.push({
+                originalLine: entryLine,
+                year: year,
+                preFullText: preFullText,
+                keywords: keywords,
+                displayPre: displayPre,
+                topKeywords: Array.from(keywords).slice(0, 8)
+            });
+        }
+        
+        function findMatches(extractedContent, bibEntries) {
+            const lines = extractedContent.split('\n');
+            const snippetsList = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                const stripped = lines[i].trim();
+                if (stripped.includes('[') && stripped.includes(']') && /\d{4}/.test(stripped)) {
+                    snippetsList.push({index: i, text: stripped});
+                }
+            }
+            
+            const usedSnippetIndices = new Set();
+            const matches = [];
+            const notFoundBib = [];
+            
+            for (const entry of bibEntries) {
+                const year = entry.year;
+                const keywords = entry.keywords;
+                
+                const matchedSnippets = [];
+                const matchedKeywordsSet = new Set();
+                
+                for (const snippet of snippetsList) {
+                    if (usedSnippetIndices.has(snippet.index)) continue;
+                    if (!snippet.text.includes(year)) continue;
+                    
+                    const snippetWords = new Set();
+                    const chineseWords = snippet.text.match(/[\u4e00-\u9fff]+/g) || [];
+                    const englishWords = snippet.text.match(/\b[a-zA-Z]+\b/g) || [];
+                    [...chineseWords, ...englishWords]
+                        .filter(w => w.length >= 2)
+                        .forEach(w => snippetWords.add(w.toLowerCase()));
+                    
+                    const common = new Set([...keywords].filter(k => snippetWords.has(k)));
+                    if (common.size > 0) {
+                        matchedSnippets.push(snippet.text);
+                        common.forEach(k => matchedKeywordsSet.add(k));
+                        usedSnippetIndices.add(snippet.index);
+                    }
+                }
+                
+                if (matchedSnippets.length > 0) {
+                    matches.push({
+                        bib: entry,
+                        evidence: matchedSnippets,
+                        matchedKeywords: Array.from(matchedKeywordsSet)
+                    });
+                } else {
+                    notFoundBib.push(entry);
+                }
+            }
+            
+            const unmatchedSnippets = snippetsList
+                .filter(s => !usedSnippetIndices.has(s.index))
+                .map(s => s.text);
+            
+            return {matches, notFoundBib, unmatchedSnippets};
+        }
+        
+        function analyze() {
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('results').classList.remove('show');
+            
+            setTimeout(() => {
+                const bibEntries = extractBibEntries(bibContent);
+                const {matches, notFoundBib, unmatchedSnippets} = findMatches(extractedContent, bibEntries);
+                
+                displayResults(bibEntries.length, matches, notFoundBib, unmatchedSnippets);
+                
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('results').classList.add('show');
+            }, 100);
+        }
+        
+        function displayResults(totalBib, matches, notFoundBib, unmatchedSnippets) {
+            const resultsDiv = document.getElementById('results');
+            
+            let html = `
+                <div class="summary">
+                    <h2>📊 摘要報告</h2>
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <span class="number">${totalBib}</span>
+                            <span class="label">總文獻筆數</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="number">${matches.length}</span>
+                            <span class="label">✔ 成功匹配</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="number">${notFoundBib.length}</span>
+                            <span class="label">✖ 未被引用</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="number">${unmatchedSnippets.length}</span>
+                            <span class="label">⚠ 未匹配片段</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            if (matches.length > 0) {
+                html += `<div class="section">
+                    <div class="section-title">I. 已匹配的文獻 (${matches.length} 筆)</div>`;
+                
+                matches.forEach((item, i) => {
+                    const bib = item.bib;
+                    html += `
+                        <div class="entry">
+                            <div class="entry-header">${i + 1}. [${bib.year}] ${bib.displayPre}</div>
+                            <div class="entry-detail"><strong>匹配關鍵詞：</strong>${item.matchedKeywords.slice(0, 10).join(', ')}</div>
+                            <div class="entry-detail"><strong>參考文獻：</strong>${bib.originalLine.substring(0, 120)}...</div>
+                            <div class="entry-detail"><strong>正文證據（前2筆）：</strong></div>
+                            ${item.evidence.slice(0, 2).map(ev => `<div class="evidence">→ ${ev}</div>`).join('')}
+                        </div>
+                    `;
+                });
+                
+                html += `</div>`;
+            }
+            
+            if (notFoundBib.length > 0) {
+                html += `<div class="section">
+                    <div class="section-title">II. 參考文獻中未找到正文引用的條目 (${notFoundBib.length} 筆)</div>`;
+                
+                notFoundBib.forEach((item, i) => {
+                    html += `
+                        <div class="entry error-entry">
+                            <div class="entry-header">${i + 1}. [${item.year}] ${item.displayPre}</div>
+                            ${item.topKeywords.length > 0 ? `<div class="entry-detail"><strong>期望關鍵詞（前8）：</strong>${item.topKeywords.join(', ')}</div>` : ''}
+                            <div class="entry-detail"><strong>完整條目：</strong>${item.originalLine.substring(0, 120)}...</div>
+                        </div>
+                    `;
+                });
+                
+                html += `</div>`;
+            }
+            
+            if (unmatchedSnippets.length > 0) {
+                html += `<div class="section">
+                    <div class="section-title">III. 正文中含有年份但未匹配任何文獻的片段 (${unmatchedSnippets.length} 處)</div>`;
+                
+                unmatchedSnippets.forEach(snippet => {
+                    html += `<div class="entry warning-entry"><div class="entry-detail">⚠ ${snippet}</div></div>`;
+                });
+                
+                html += `</div>`;
+            }
+            
+            html += `<button class="btn download-btn" onclick="downloadReport()">📥 下載完整報告</button>`;
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        function downloadReport() {
+            const resultsDiv = document.getElementById('results');
+            const text = resultsDiv.innerText;
+            const blob = new Blob([text], {type: 'text/plain;charset=utf-8'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '文獻匹配報告.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

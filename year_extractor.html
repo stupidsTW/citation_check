@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>西元年份提取工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .upload-section {
+            padding: 30px;
+            background: #f8f9fa;
+        }
+        
+        .file-input-group {
+            margin-bottom: 20px;
+        }
+        
+        .file-input-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        .file-input-wrapper input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .file-input-wrapper input[type="file"]:hover {
+            border-color: #764ba2;
+            background: #f0f0ff;
+        }
+        
+        .settings {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .settings label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .settings input[type="number"] {
+            width: 100px;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .settings input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+        
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .results {
+            padding: 30px;
+            display: none;
+        }
+        
+        .results.show {
+            display: block;
+        }
+        
+        .summary {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .summary h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 22px;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .summary-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .summary-item .number {
+            font-size: 32px;
+            font-weight: 700;
+            color: #667eea;
+            display: block;
+        }
+        
+        .summary-item .label {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        
+        .extraction-list {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .extraction-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            transition: all 0.2s;
+        }
+        
+        .extraction-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateX(5px);
+        }
+        
+        .extraction-item .index {
+            color: #667eea;
+            font-weight: 700;
+            margin-right: 8px;
+        }
+        
+        .extraction-item .year {
+            background: #667eea;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+            font-size: 18px;
+            display: none;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .download-btn {
+            background: #28a745;
+            margin-top: 20px;
+        }
+        
+        .download-btn:hover {
+            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.4);
+        }
+        
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .info-box h3 {
+            color: #2196F3;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .info-box ul {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📅 西元年份提取工具</h1>
+            <p>從論文或文本中提取所有 1900-2099 年份及其上下文</p>
+        </div>
+        
+        <div class="upload-section">
+            <div class="file-input-group">
+                <label for="textFile">📄 上傳文本檔案 (.txt)</label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="textFile" accept=".txt">
+                </div>
+            </div>
+            
+            <div class="settings">
+                <label for="contextChars">
+                    🔍 上下文字元數（年份前後各提取多少字元）
+                </label>
+                <input type="number" id="contextChars" value="30" min="10" max="100" step="5">
+            </div>
+            
+            <button class="btn" id="extractBtn" disabled>開始提取年份</button>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>正在提取中，請稍候...</p>
+        </div>
+        
+        <div class="results" id="results"></div>
+    </div>
+
+    <script>
+        let textContent = null;
+        let fileName = '';
+        
+        document.getElementById('textFile').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                fileName = file.name;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    textContent = ev.target.result;
+                    document.getElementById('extractBtn').disabled = false;
+                };
+                reader.readAsText(file);
+            }
+        });
+        
+        document.getElementById('extractBtn').addEventListener('click', extractYears);
+        
+        function extractYearsWithContext(text, contextChars) {
+            const pattern = /\b(19\d{2}|20\d{2})\b/g;
+            const matches = [];
+            let match;
+            
+            while ((match = pattern.exec(text)) !== null) {
+                const year = match[0];
+                const start = match.index;
+                const end = start + year.length;
+                
+                const contextStart = Math.max(0, start - contextChars);
+                const contextEnd = Math.min(text.length, end + contextChars);
+                
+                const before = text.substring(contextStart, start);
+                const after = text.substring(end, contextEnd);
+                const snippet = text.substring(contextStart, contextEnd);
+                
+                matches.push({
+                    year: year,
+                    snippet: snippet,
+                    before: before,
+                    after: after,
+                    position: start
+                });
+            }
+            
+            return matches;
+        }
+        
+        function extractYears() {
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('results').classList.remove('show');
+            
+            setTimeout(() => {
+                const contextChars = parseInt(document.getElementById('contextChars').value);
+                const results = extractYearsWithContext(textContent, contextChars);
+                
+                // 去重：相同年份 + 相同完整片段
+                const seen = new Set();
+                const uniqueResults = [];
+                
+                for (const item of results) {
+                    const key = `${item.year}|${item.snippet}`;
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        uniqueResults.push(item);
+                    }
+                }
+                
+                displayResults(results.length, uniqueResults, contextChars);
+                
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('results').classList.add('show');
+            }, 100);
+        }
+        
+        function displayResults(totalCount, uniqueResults, contextChars) {
+            const resultsDiv = document.getElementById('results');
+            const now = new Date().toLocaleString('zh-TW');
+            
+            let html = `
+                <div class="summary">
+                    <h2>📊 提取摘要</h2>
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <span class="number">${totalCount}</span>
+                            <span class="label">總年份出現次數</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="number">${uniqueResults.length}</span>
+                            <span class="label">去重後顯示筆數</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="number">${contextChars}</span>
+                            <span class="label">上下文字元數</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <h3>ℹ️ 檔案資訊</h3>
+                    <ul>
+                        <li><strong>來源檔案：</strong>${fileName}</li>
+                        <li><strong>提取時間：</strong>${now}</li>
+                        <li><strong>偵測範圍：</strong>1900-2099 年</li>
+                    </ul>
+                </div>
+                
+                <h2 style="margin: 30px 0 15px 0; color: #333;">📋 提取結果列表</h2>
+                <div class="extraction-list">
+            `;
+            
+            uniqueResults.forEach((item, i) => {
+                html += `
+                    <div class="extraction-item">
+                        <span class="index">${i + 1}.</span>
+                        ...${escapeHtml(item.before)}<span class="year">[${item.year}]</span> ${escapeHtml(item.after)}...
+                    </div>
+                `;
+            });
+            
+            html += `
+                </div>
+                
+                <div class="info-box" style="margin-top: 20px;">
+                    <h3>💡 使用說明</h3>
+                    <ul>
+                        <li><strong>[] 內為偵測到的西元年份</strong>（1900–2099）</li>
+                        <li>年份前後各提取 ${contextChars} 個字元（若檔首或檔尾不足則顯示全部）</li>
+                        <li>若同一上下文完全相同，只顯示一次（避免重複）</li>
+                        <li>建議用此結果手動檢查哪些年份出現在括號內，即為 in-text citation</li>
+                    </ul>
+                </div>
+                
+                <button class="btn download-btn" onclick="downloadReport()">📥 下載提取結果</button>
+            `;
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function downloadReport() {
+            const contextChars = parseInt(document.getElementById('contextChars').value);
+            const results = extractYearsWithContext(textContent, contextChars);
+            
+            const seen = new Set();
+            const uniqueResults = [];
+            
+            for (const item of results) {
+                const key = `${item.year}|${item.snippet}`;
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    uniqueResults.push(item);
+                }
+            }
+            
+            const now = new Date().toLocaleString('zh-TW');
+            let reportText = `西元年份提取結果（前後各 ${contextChars} 字元）\n`;
+            reportText += '='.repeat(80) + '\n';
+            reportText += `來源檔案：${fileName}\n`;
+            reportText += `共找到 ${results.length} 處年份出現\n`;
+            reportText += `輸出時間：${now}\n`;
+            reportText += '='.repeat(80) + '\n\n';
+            
+            uniqueResults.forEach((item, i) => {
+                reportText += `${String(i + 1).padStart(3, ' ')}. ...${item.before}[${item.year}] ${item.after}...\n`;
+            });
+            
+            reportText += '\n' + '='.repeat(80) + '\n';
+            reportText += '說明：\n';
+            reportText += '  - [] 內為偵測到的西元年份（1900–2099）\n';
+            reportText += `  - 年份前後各提取 ${contextChars} 個字元（若檔首或檔尾不足則顯示全部）\n`;
+            reportText += '  - 若同一上下文完全相同，只顯示一次（避免重複）\n';
+            reportText += '  - 建議用此結果手動檢查哪些年份出現在括號內，即為 in-text citation\n';
+            
+            const blob = new Blob([reportText], {type: 'text/plain;charset=utf-8'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `年份提取結果_${fileName}`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
